@@ -3,7 +3,7 @@
    EDIT HERE: your contact details. Leave "" to hide a row.
    ========================================================= */
 const CONFIG = {
-  email: "yourname@email.com",            // <-- put your real email here
+  email: "neilchrstphrrodas@gmail.com",
   phone: "",                              // e.g. "+63 9XX XXX XXXX"
   linkedin: "https://www.linkedin.com/in/neil-rodas-00b184441/",
   github: "https://github.com/neil-christopher",

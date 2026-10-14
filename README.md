@@ -32,7 +32,7 @@ projects/
 
 ## 2. Make it yours (5 minutes)
 Open `js/main.js`. Everything you need is at the top:
-- `CONFIG.email`: **replace `yourname@email.com` with your real email.**
+- `CONFIG.email`: the email shown in Contact (currently neilchrstphrrodas@gmail.com).
 - `CONFIG.phone`, `CONFIG.linkedin`, `CONFIG.github`: fill these in, or leave them as `""` to hide the button.
 - Projects, milestones and certificates are plain lists (`PROJECTS`, `TIMELINE`, `CERT_GROUPS`), so you can add or edit entries without touching HTML.
 
