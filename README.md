@@ -57,7 +57,7 @@ The Figma prototypes load `prototype.json` with `fetch`, so open the site throug
 ## What's on the page
 A clean, editorial single page:
 - **Intro:** large name, short summary, résumé button and a facts panel (school, honors, focus).
-- **Work:** numbered project rows; click one to expand its details. Five apps have **Try it live** web versions with source downloads, and four Figma designs are **clickable prototypes**.
+- **Works:** numbered project rows; click one to expand its details. Five apps have **Try it live** web versions with source downloads, and four Figma designs are **clickable prototypes**.
 - **Skills:** three columns.
 - **Milestones:** a step timeline from 2023 to now.
 - **Certificates:** grouped by issuer, with links to verify each one.
