@@ -9,6 +9,7 @@ const CONFIG = {
   github: "https://github.com/neil-christopher",
   resume: "assets/Neil-Rodas-Resume.pdf",
   googleSkills: "https://www.skills.google/public_profiles/29ba403f-38e6-41ca-88d0-9d8d23655f21",
+  credly: "https://www.credly.com/users/neil-christopher-rodas",
 };
 
 /* ---------- Projects ---------- */
@@ -180,8 +181,8 @@ const CERT_GROUPS = [
     ["Project Execution: Running the Project", "Feb 2026", "https://coursera.org/verify/4F6H2CYWNY9V"],
     ["Agile Project Management", "Feb 2026", "https://coursera.org/verify/QGWTTWN4LWFZ"],
   ]},
-  { name: "Cisco Networking Academy", mark: "CS", color: "#1b8fbd", verb: "View", items: [
-    ["CCNA: Switching, Routing, and Wireless Essentials", "Nov 2025", "assets/certificates/ccna-srwe.pdf"],
+  { name: "Cisco Networking Academy · Credly", mark: "CS", color: "#1b8fbd", verb: "Verify", items: [
+    ["CCNA: Switching, Routing, and Wireless Essentials", "Credly badge · Nov 2025", "https://www.credly.com/badges/67a09802-b75f-4a48-8b57-3f98973d0c85"],
   ]},
   { name: "Seminars", mark: "SM", color: "#6b7280", verb: "View", items: [
     ["Data Security in Computer Programming Languages", "Ethel Programming Services · Feb 2026", "assets/certificates/data-security-webinar.pdf"],
@@ -266,6 +267,7 @@ const rows = [
   CONFIG.linkedin && `<li><a href="${CONFIG.linkedin}" target="_blank" rel="noopener"><span class="k">LinkedIn</span><span class="v">LinkedIn profile</span><span class="go">↗</span></a></li>`,
   CONFIG.github && `<li><a href="${CONFIG.github}" target="_blank" rel="noopener"><span class="k">Code</span><span class="v">GitHub</span><span class="go">↗</span></a></li>`,
   `<li><a href="${CONFIG.googleSkills}" target="_blank" rel="noopener"><span class="k">Badges</span><span class="v">Google Skills profile</span><span class="go">↗</span></a></li>`,
+  CONFIG.credly && `<li><a href="${CONFIG.credly}" target="_blank" rel="noopener"><span class="k">Credly</span><span class="v">Credly badges</span><span class="go">↗</span></a></li>`,
   CONFIG.resume && `<li><a href="${CONFIG.resume}" target="_blank" rel="noopener"><span class="k">Résumé</span><span class="v">One-page PDF</span><span class="go">↗</span></a></li>`,
 ].filter(Boolean);
 $("#contactList").innerHTML = rows.join("");
