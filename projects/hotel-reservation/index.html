@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hotel Reservation System · Live Demo</title>
+  <meta name="description" content="Web version of Neil Rodas's C# Windows Forms Hotel Reservation System: book, search, update, remove and check out reservations." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root { --bg: #fafaf7; --ink: #141619; --muted: #676b72; --line: #e3e2dc; --accent: #14855a; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #0f1112; --ink: #e9eae6; --muted: #979ba1; --line: #2a2d30; --accent: #4fcf95; } }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.6 "IBM Plex Sans", system-ui, sans-serif; }
+    a { color: inherit; }
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
+    .bar { display: flex; justify-content: space-between; align-items: center; height: 60px; font-size: 14px; }
+    .bar a { text-decoration: none; color: var(--muted); } .bar a:hover { color: var(--accent); }
+    .mono { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; color: var(--muted); }
+    .intro { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 40px; padding: 24px 0 28px; align-items: end; }
+    h1 { font-size: clamp(28px, 4vw, 40px); line-height: 1.15; margin: 8px 0 12px; letter-spacing: -.01em; }
+    .lede { color: var(--muted); margin: 0; max-width: 560px; }
+    .side { font-size: 14px; color: var(--muted); }
+    .side ul { margin: 0 0 14px; padding-left: 18px; }
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+    .tags span { font: 500 12px "IBM Plex Mono", monospace; padding: 2px 8px; border-radius: 4px; border: 1px solid var(--line); color: var(--muted); }
+    .links { display: flex; flex-wrap: wrap; gap: 8px; }
+    .btn { display: inline-block; padding: 8px 14px; border: 1px solid var(--line); border-radius: 6px; text-decoration: none; font-weight: 500; font-size: 14px; background: transparent; cursor: pointer; color: inherit; font-family: inherit; }
+    .btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ---------- Windows Forms look ---------- */
+    .desktop { background: linear-gradient(135deg, #2b5876, #4e4376); border-radius: 12px; padding: clamp(10px, 3vw, 32px); margin-bottom: 72px; }
+    .win { background: #f0f0f0; color: #111; border: 1px solid #7a7a7a; box-shadow: 0 20px 50px -20px rgba(0,0,0,.6); font: 13px "Segoe UI", "Yu Gothic UI", system-ui, sans-serif; margin: 0 auto; }
+    .titlebar { display: flex; justify-content: space-between; align-items: center; background: #fff; border-bottom: 1px solid #ddd; height: 32px; padding-left: 10px; user-select: none; }
+    .titlebar .t { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+    .titlebar .t i { width: 14px; height: 14px; background: #2b7bd6; border-radius: 2px; display: inline-block; }
+    .ctrls { display: flex; height: 100%; }
+    .ctrls span { width: 44px; display: grid; place-items: center; font-size: 12px; color: #333; }
+    .ctrls span:last-child:hover { background: #e81123; color: #fff; cursor: pointer; }
+    .body { padding: 18px; }
+    .wbtn { font: 13px "Segoe UI", "Yu Gothic UI", system-ui, sans-serif; padding: 5px 14px; min-height: 28px; background: #e1e1e1; border: 1px solid #adadad; color: #111; cursor: pointer; border-radius: 0; }
+    .wbtn:hover:not(:disabled) { background: #e5f1fb; border-color: #0078d7; }
+    .wbtn:disabled { color: #9a9a9a; background: #ececec; border-color: #cfcfcf; cursor: default; }
+    .wbtn.peach { background: #ffe0c0; }
+    .wbtn.peach:hover:not(:disabled) { background: #ffd2a6; border-color: #d98a3d; }
+    input.w, select.w { font: 12px "Segoe UI", "Yu Gothic UI", system-ui, sans-serif; border: 1px solid #7a7a7a; padding: 4px 6px; background: #fff; color: #111; min-height: 26px; width: 100%; border-radius: 0; }
+    input.w:focus, select.w:focus { outline: 1px solid #0078d7; border-color: #0078d7; }
+    input.w:disabled { background: #f4f4f4; color: #555; }
+    input.w::placeholder { color: #8f8f8f; }
+    .lbl { font-weight: 700; font-size: 13px; margin-bottom: 3px; display: block; }
+
+    /* Main menu */
+    .menu { max-width: 340px; }
+    .menu .body { display: grid; gap: 12px; padding: 28px 40px 32px; text-align: center; }
+    .menu h2 { margin: 0 0 6px; font: 600 20px "Segoe UI", system-ui, sans-serif; }
+    .menu p { margin: 0 0 8px; color: #555; font-size: 12.5px; }
+    .menu .wbtn { padding: 9px; font-size: 14px; }
+
+    /* Book a room */
+    .book { max-width: 1100px; }
+    .book .body { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 18px; }
+    .book .body > * { min-width: 0; }
+    .desktop, .win { min-width: 0; max-width: 100%; }
+    .form { display: grid; gap: 10px; align-content: start; }
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px; }
+    .search { display: grid; grid-template-columns: 1fr auto; gap: 6px; }
+    .lv { border: 1px solid #828790; background: #fff; overflow: auto; max-height: 470px; }
+    table { border-collapse: collapse; width: 100%; font-size: 12px; white-space: nowrap; }
+    th { position: sticky; top: 0; background: #fff; border-right: 1px solid #e5e5e5; border-bottom: 1px solid #d5d5d5; text-align: left; font-weight: 400; padding: 4px 8px; cursor: pointer; user-select: none; }
+    th:hover { background: #d9ebf9; }
+    th .arr { color: #888; font-size: 10px; margin-left: 4px; }
+    td { padding: 3px 8px; border-bottom: 1px solid #f3f3f3; }
+    tbody tr { cursor: default; }
+    tbody tr:hover { background: #e5f3ff; }
+    tbody tr.sel { background: #cce8ff; }
+    .count { font-size: 12px; color: #555; margin-top: 6px; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .count button { background: none; border: 0; color: #0066cc; cursor: pointer; font: inherit; padding: 0; text-decoration: underline; }
+
+    /* Checkout */
+    .checkout { max-width: 420px; }
+    .checkout .body { display: grid; grid-template-columns: 140px 1fr; gap: 12px 10px; align-items: center; padding: 24px; }
+    .checkout .full { grid-column: 1 / -1; display: flex; gap: 8px; justify-content: flex-end; }
+
+    /* MessageBox */
+    .mb-back { position: fixed; inset: 0; background: rgba(0,0,0,.25); display: grid; place-items: center; z-index: 50; padding: 16px; }
+    .mb-back[hidden] { display: none; }
+    .mb { width: min(380px, 100%); }
+    .mb .body { display: flex; gap: 14px; align-items: flex-start; padding: 22px 20px 18px; background: #fff; white-space: pre-wrap; word-break: break-word; }
+    .mb .ico { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 700; }
+    .mb .ico.info { background: #1e73be; } .mb .ico.err { background: #d7262b; } .mb .ico.ok { background: #2a9d4a; }
+    .mb .foot { background: #f0f0f0; padding: 10px 14px; text-align: right; border-top: 1px solid #ddd; }
+
+    [hidden] { display: none !important; }
+
+    @media (max-width: 900px) {
+      .intro { grid-template-columns: 1fr; gap: 18px; }
+      .book .body { grid-template-columns: 1fr; }
+      .lv { max-height: 360px; }
+    }
+    @media (max-width: 460px) {
+      .checkout .body { grid-template-columns: 1fr; gap: 4px 0; }
+      .checkout .full { margin-top: 8px; }
+      .menu .body { padding: 22px 20px 24px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="bar"><a href="../../index.html#work">← Back to portfolio</a><span class="mono">Live demo</span></div>
+
+    <div class="intro">
+      <div>
+        <span class="mono">Desktop app · C# Windows Forms (.NET Framework)</span>
+        <h1>Hotel Reservation System</h1>
+        <p class="lede">A desktop system for booking rooms, finding and editing reservations by reference number, and checking guests out. This web version runs the same screens and validation rules in your browser.</p>
+      </div>
+      <div class="side">
+        <ul>
+          <li>Book, update and remove reservations; select a row to load it.</li>
+          <li>Search by reference no. (try <code>HTL-03242024-51228</code>).</li>
+          <li>Click a column header to sort.</li>
+          <li>Check Out saves a receipt as a .txt file.</li>
+        </ul>
+        <div class="tags"><span>C#</span><span>WinForms</span><span>Dictionary</span><span>StreamReader/Writer</span><span>ListView</span></div>
+        <div class="links">
+          <a class="btn" href="../../assets/source/Hotel-Reservation-source.zip" download>Download C# source (.zip)</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="desktop">
+      <!-- Main Menu -->
+      <section class="win menu" id="scr-menu">
+        <div class="titlebar"><span class="t"><i></i>Main Menu</span><span class="ctrls"><span>—</span><span>☐</span><span data-exit>✕</span></span></div>
+        <div class="body">
+          <h2>Hotel Reservation</h2>
+          <p>Choose an option</p>
+          <button class="wbtn" data-go="book">Book a Room</button>
+          <button class="wbtn" disabled title="This button has no action in the original app">Check In</button>
+          <button class="wbtn" data-go="checkout">Check Out</button>
+          <button class="wbtn" data-exit>Exit</button>
+        </div>
+      </section>
+
+      <!-- Book a Room -->
+      <section class="win book" id="scr-book" hidden>
+        <div class="titlebar"><span class="t"><i></i>Book_a_Room</span><span class="ctrls"><span>—</span><span>☐</span><span data-go="menu">✕</span></span></div>
+        <div class="body">
+          <form class="form" id="bookForm" autocomplete="off" novalidate>
+            <div>
+              <span class="lbl">Search</span>
+              <div class="search"><input class="w" id="searchRef" placeholder="Enter Reference No." /><button type="button" class="wbtn" id="searchBtn">search</button></div>
+            </div>
+            <div><span class="lbl">First / Last Name</span><div class="two"><input class="w" id="first" placeholder="First" /><input class="w" id="last" placeholder="Last" /></div></div>
+            <div><span class="lbl">Phone</span><input class="w" id="phone" placeholder="+63" inputmode="numeric" maxlength="20" /></div>
+            <div><span class="lbl">Email</span><input class="w" id="email" placeholder="E-mail address" /></div>
+            <div class="two">
+              <div><span class="lbl">Check In</span><input class="w" type="date" id="checkIn" /></div>
+              <div><span class="lbl">Check Out</span><input class="w" type="date" id="checkOut" /></div>
+            </div>
+            <div><span class="lbl">Room Type</span>
+              <select class="w" id="room"><option value="">Select Room Type</option><option>Single</option><option>Double</option><option>Deluxe</option><option>Family</option><option>Suite</option></select></div>
+            <div class="two">
+              <div><span class="lbl">Number of Adults</span><input class="w" id="adults" placeholder="# of Adults" inputmode="numeric" /></div>
+              <div><span class="lbl">Number of Children</span><input class="w" id="children" placeholder="# of Children" inputmode="numeric" /></div>
+            </div>
+            <div><span class="lbl">Special Request</span><input class="w" id="sr" placeholder="None" /></div>
+            <div><span class="lbl">Reference No.</span><input class="w" id="refNo" disabled /></div>
+            <div class="actions">
+              <button type="button" class="wbtn peach" id="addBtn">Add Booking</button>
+              <button type="button" class="wbtn peach" id="updateBtn" disabled>Update</button>
+              <button type="button" class="wbtn peach" id="newBtn">New Booking</button>
+              <button type="button" class="wbtn peach" id="removeBtn" disabled>Remove</button>
+              <button type="button" class="wbtn peach" data-go="menu" style="grid-column: 1 / -1">Return</button>
+            </div>
+          </form>
+          <div>
+            <div class="lv"><table><thead><tr id="head"></tr></thead><tbody id="rows"></tbody></table></div>
+            <div class="count"><span id="count"></span><span><button type="button" id="exportBtn">Save Reservations.txt</button> · <button type="button" id="resetBtn">Reset sample data</button></span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Check Out -->
+      <section class="win checkout" id="scr-checkout" hidden>
+        <div class="titlebar"><span class="t"><i></i>Hotel Checkout</span><span class="ctrls"><span>—</span><span>☐</span><span data-go="menu">✕</span></span></div>
+        <form class="body" id="coForm" novalidate>
+          <label class="lbl" for="coRef">Reference Number:</label><input class="w" id="coRef" list="refList" />
+          <label class="lbl" for="coName">Customer Name:</label><input class="w" id="coName" />
+          <label class="lbl" for="coPay">Payment Amount:</label><input class="w" id="coPay" inputmode="decimal" />
+          <label class="lbl" for="coDate">Checkout Date:</label><input class="w" type="date" id="coDate" />
+          <div class="full"><button type="button" class="wbtn" data-go="menu">Back</button><button type="submit" class="wbtn">Checkout</button></div>
+          <datalist id="refList"></datalist>
+        </form>
+      </section>
+    </div>
+  </div>
+
+  <!-- MessageBox -->
+  <div class="mb-back" id="mb" hidden>
+    <div class="win mb" role="alertdialog" aria-modal="true" aria-labelledby="mbTitle">
+      <div class="titlebar"><span class="t" id="mbTitle"></span><span class="ctrls"><span data-mb-close>✕</span></span></div>
+      <div class="body"><span class="ico" id="mbIco">i</span><span id="mbText"></span></div>
+      <div class="foot"><button class="wbtn" data-mb-close style="min-width:80px">OK</button></div>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script>
+    /* ---------- Storage (falls back to memory if the browser blocks it) ---------- */
+    const KEY = "hotel-reservations-demo";
+    const store = {
+      load() { try { const v = localStorage.getItem(KEY); return v ? JSON.parse(v) : null; } catch { return null; } },
+      save(rows) { try { localStorage.setItem(KEY, JSON.stringify(rows)); } catch { /* ignore */ } },
+      clear() { try { localStorage.removeItem(KEY); } catch { /* ignore */ } },
+    };
+
+    // reservationDict: reference no. → [first, last, phone, email, room, in, out, adults, children, requests, ref]
+    let reservationDict = new Map();
+    function loadDict(rows) { reservationDict = new Map(rows.map((r) => [r[10], r.slice()])); }
+    loadDict(store.load() || SAMPLE_RESERVATIONS);
+    const persist = () => store.save([...reservationDict.values()]);
+
+    const $ = (id) => document.getElementById(id);
+    const COLS = ["First Name", "Last Name", "Phone", "Email", "Room Type", "Check In", "Check Out", "Adult/s", "Children", "Special Requests", "Reference No."];
+
+    /* ---------- MessageBox ---------- */
+    function messageBox(text, title = "", kind = "info") {
+      $("mbText").textContent = text;
+      $("mbTitle").textContent = title || " ";
+      $("mbIco").className = "ico " + kind;
+      $("mbIco").textContent = kind === "err" ? "✕" : kind === "ok" ? "✓" : "i";
+      $("mb").hidden = false;
+      document.querySelector("#mb .foot .wbtn").focus();
+    }
+    document.querySelectorAll("[data-mb-close]").forEach((b) => b.addEventListener("click", () => ($("mb").hidden = true)));
+    addEventListener("keydown", (e) => { if (!$("mb").hidden && (e.key === "Escape" || e.key === "Enter")) { e.preventDefault(); $("mb").hidden = true; } });
+
+    /* ---------- Navigation between forms ---------- */
+    function show(name) {
+      ["menu", "book", "checkout"].forEach((n) => ($("scr-" + n).hidden = n !== name));
+      if (name === "book") { renderList(); clearInputs(); }
+      if (name === "checkout") { $("coForm").reset(); $("coDate").value = today(); fillRefList(); }
+    }
+    document.querySelectorAll("[data-go]").forEach((b) => b.addEventListener("click", () => show(b.dataset.go)));
+    document.querySelectorAll("[data-exit]").forEach((b) => b.addEventListener("click", () => { location.href = "../../index.html#work"; }));
+
+    /* ---------- Date helpers (MM/dd/yyyy like the C# app) ---------- */
+    const pad = (n) => String(n).padStart(2, "0");
+    function today() { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
+    const isoToUs = (iso) => { const [y, m, d] = iso.split("-"); return `${m}/${d}/${y}`; };
+    const usToIso = (us) => { const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(us || ""); return m ? `${m[3]}-${m[1]}-${m[2]}` : ""; };
+
+    /* ---------- ListView ---------- */
+    let sortCol = -1, ascending = true, selectedRef = null;
+    $("head").innerHTML = COLS.map((c, i) => `<th data-col="${i}">${c}<span class="arr"></span></th>`).join("");
+    $("head").addEventListener("click", (e) => {
+      const th = e.target.closest("th"); if (!th) return;
+      ascending = sortCol === +th.dataset.col ? !ascending : true;
+      sortCol = +th.dataset.col;
+      renderList();
+    });
+    const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    function renderList() {
+      let rows = [...reservationDict.values()];
+      if (sortCol >= 0) rows.sort((a, b) => (ascending ? 1 : -1) * String(a[sortCol]).localeCompare(String(b[sortCol])));
+      $("rows").innerHTML = rows.map((r) => `<tr data-ref="${esc(r[10])}" class="${r[10] === selectedRef ? "sel" : ""}">${r.map((v) => `<td>${esc(v)}</td>`).join("")}</tr>`).join("");
+      document.querySelectorAll("#head .arr").forEach((s, i) => (s.textContent = i === sortCol ? (ascending ? "▲" : "▼") : ""));
+      $("count").textContent = `${rows.length} reservation${rows.length === 1 ? "" : "s"}`;
+    }
+
+    /* ---------- Form ---------- */
+    const F = ["first", "last", "phone", "email", "room", "checkIn", "checkOut", "adults", "children", "sr"];
+    function ensureRoomOption(v) {
+      if (v && ![...$("room").options].some((o) => o.value === v)) $("room").add(new Option(v, v));
+    }
+    function fillForm(r, lock) {
+      $("first").value = r[0]; $("last").value = r[1]; $("phone").value = r[2]; $("email").value = r[3];
+      ensureRoomOption(r[4]); $("room").value = r[4];
+      $("checkIn").value = usToIso(r[5]); $("checkOut").value = usToIso(r[6]);
+      $("adults").value = r[7]; $("children").value = r[8]; $("sr").value = r[9] === "None" ? "" : r[9];
+      $("refNo").value = r[10];
+      selectedRef = r[10];
+      ["first", "last", "phone", "email"].forEach((id) => ($(id).disabled = lock));
+      $("addBtn").disabled = true; $("updateBtn").disabled = false; $("removeBtn").disabled = false;
+      renderList();
+    }
+    function clearInputs() {
+      F.forEach((id) => { $(id).value = ""; $(id).disabled = false; });
+      $("checkIn").value = today(); $("checkOut").value = today();
+      $("refNo").value = ""; selectedRef = null;
+      $("addBtn").disabled = false; $("updateBtn").disabled = true; $("removeBtn").disabled = true;
+      renderList();
+    }
+    $("rows").addEventListener("click", (e) => {
+      const tr = e.target.closest("tr"); if (!tr) return;
+      fillForm(reservationDict.get(tr.dataset.ref), true);
+    });
+
+    function generateRefNo(checkInIso) {
+      const [y, m, d] = checkInIso.split("-");
+      let ref;
+      do { ref = `HTL-${y}${m}${d}-${10000 + Math.floor(Math.random() * 89999)}`; } while (reservationDict.has(ref));
+      return ref;
+    }
+
+    function readForm() {
+      return [$("first").value.trim(), $("last").value.trim(), $("phone").value.trim(), $("email").value.trim(), $("room").value,
+        $("checkIn").value ? isoToUs($("checkIn").value) : "", $("checkOut").value ? isoToUs($("checkOut").value) : "",
+        $("adults").value.trim(), $("children").value.trim(), $("sr").value.trim() || "None"];
+    }
+
+    // Add Booking: same checks, in the same order, as Add_Click in the C# app
+    $("addBtn").addEventListener("click", () => {
+      const v = readForm();
+      if (!v[0] || !v[1] || !v[2] || !v[3] || !v[7] || !v[8]) return messageBox("Input fields should be filled!");
+      if (v[2].length !== 11) return messageBox("Invalid Phone no.");
+      if ($("checkIn").value < today() || $("checkOut").value < today()) return messageBox("Invalid Date");
+      if (!v[4]) return messageBox("Please Select Room Type");
+      const ref = generateRefNo($("checkIn").value);
+      reservationDict.set(ref, [...v, ref]);
+      persist();
+      fillForm(reservationDict.get(ref), true);
+      messageBox(`Reservation for ${v[0]} ${v[1]} has been added!\nReference No.: ${ref}`, "", "ok");
+    });
+
+    $("updateBtn").addEventListener("click", () => {
+      const ref = $("refNo").value; if (!reservationDict.has(ref)) return;
+      const v = readForm();
+      reservationDict.set(ref, [...v, ref]);
+      persist(); renderList();
+      messageBox(`Reservation of ${v[0]} ${v[1]} has been updated!`, "", "ok");
+    });
+
+    $("removeBtn").addEventListener("click", () => {
+      const ref = $("refNo").value; if (!reservationDict.has(ref)) return;
+      const r = reservationDict.get(ref);
+      reservationDict.delete(ref);
+      persist(); clearInputs();
+      messageBox(`Reservation of ${r[0]} ${r[1]} has been removed!`, "", "ok");
+    });
+
+    $("newBtn").addEventListener("click", clearInputs);
+
+    function search() {
+      const q = $("searchRef").value.trim();
+      if (!q) return;
+      const r = reservationDict.get(q);
+      if (r) fillForm(r, false); else messageBox("Reference No. not found!");
+    }
+    $("searchBtn").addEventListener("click", search);
+    $("searchRef").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); search(); } });
+
+    /* ---------- Files ---------- */
+    function download(name, text) {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
+      a.download = name; document.body.appendChild(a); a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+    }
+    // Same line format the C# app writes on FormClosing
+    $("exportBtn").addEventListener("click", () => download("Reservations.txt", [...reservationDict.values()].map((r) => r.join(";")).join("\r\n") + "\r\n"));
+    $("resetBtn").addEventListener("click", () => { store.clear(); loadDict(SAMPLE_RESERVATIONS); clearInputs(); messageBox("Sample data restored."); });
+
+    /* ---------- Check Out (btnCheckout_Click) ---------- */
+    function fillRefList() { $("refList").innerHTML = [...reservationDict.keys()].map((k) => `<option value="${esc(k)}">`).join(""); }
+    $("coRef").addEventListener("change", () => {
+      const r = reservationDict.get($("coRef").value.trim());
+      if (r && !$("coName").value) $("coName").value = `${r[0]} ${r[1]}`;
+    });
+    $("coForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const ref = $("coRef").value.trim(), name = $("coName").value.trim(), pay = $("coPay").value.trim(), date = $("coDate").value;
+      if (!ref || !name || !pay) return messageBox("Please fill in all fields.", "Validation Error", "err");
+      const file = `Checkout_${ref}.txt`;
+      download(file, `Reference Number: ${ref}\nCustomer Name: ${name}\nPayment Amount: ${pay}\nCheckout Date: ${date}`);
+      messageBox(`Checkout details saved to file:\n${file}`, "Success", "ok");
+      $("coForm").reset(); $("coDate").value = today();
+    });
+
+    show("menu");
+  </script>
+</body>
+</html>

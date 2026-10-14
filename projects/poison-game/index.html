@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Poison Game · Live Demo</title>
+  <meta name="description" content="Web version of Neil Rodas's Kotlin Jetpack Compose Poison Game: a two-player pass-and-play card game." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&family=Roboto:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../demo.css" />
+  <style>
+    /* Material 3 look, like the Compose app */
+    .app { position: absolute; inset: 0; padding: 40px 18px 18px; font-family: Roboto, system-ui, sans-serif; color: #1d1b20; background: #fef7ff; display: flex; flex-direction: column; }
+    .login { justify-content: center; align-items: center; gap: 10px; }
+    .login h2 { font-size: 26px; font-weight: 400; margin: 0 0 10px; }
+    .field { position: relative; width: 100%; max-width: 280px; }
+    .field input { width: 100%; height: 56px; border: 1px solid #79747e; border-radius: 4px; padding: 16px 14px 0; font: 16px Roboto, sans-serif; background: transparent; color: #1d1b20; outline: none; }
+    .field input:focus { border: 2px solid #6750a4; padding-left: 13px; }
+    .field label { position: absolute; left: 12px; top: 17px; padding: 0 4px; font-size: 16px; color: #49454f; background: #fef7ff; transition: all .15s; pointer-events: none; }
+    .field input:focus + label, .field input:not(:placeholder-shown) + label { top: -8px; font-size: 12px; color: #6750a4; }
+    .m3btn { margin-top: 8px; height: 40px; padding: 0 24px; border: 0; border-radius: 20px; background: #6750a4; color: #fff; font: 500 14px Roboto, sans-serif; letter-spacing: .01em; cursor: pointer; }
+    .m3btn:disabled { background: rgba(29,27,32,.12); color: rgba(29,27,32,.38); cursor: default; }
+    .score { font-size: 18px; line-height: 1.5; }
+    .score .dead { color: #b3261e; font-weight: 500; }
+    .score .turn { font-size: 13px; color: #6750a4; margin-top: 6px; min-height: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 8px; margin-top: 10px; }
+    .card { aspect-ratio: 1; border: 0; background: #808080; font-size: 26px; display: grid; place-items: center; cursor: pointer; padding: 0; transition: transform .12s; }
+    .card:hover { transform: scale(.96); }
+    .card.safe { background: #00ff00; }
+    .card.poison { background: #ff0000; }
+    .flip { animation: flip .3s ease; }
+    @keyframes flip { from { transform: rotateY(90deg); } }
+    .scrim { position: absolute; inset: 0; background: rgba(0,0,0,.32); display: grid; place-items: center; z-index: 10; padding: 24px; }
+    .dialog { background: #ece6f0; border-radius: 28px; padding: 24px; width: 100%; max-width: 300px; font-family: Roboto, sans-serif; }
+    .dialog h3 { margin: 0 0 14px; font-size: 24px; font-weight: 400; }
+    .dialog p { margin: 0 0 22px; color: #49454f; }
+    .dialog .end { text-align: right; }
+    .hint { font-size: 12.5px; color: #49454f; text-align: center; margin-top: auto; padding-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="bar"><a href="../../index.html#work">← Back to portfolio</a><span class="mono">Live demo</span></div>
+    <div class="layout">
+      <div>
+        <span class="mono">Mobile game · Kotlin + Jetpack Compose</span>
+        <h1>Poison Game</h1>
+        <p class="lede">A two-player, pass-and-play card game. Two poison cards are hidden in a 4×4 grid. Players take turns flipping cards, scoring a point for every candy. Flip a poison and the game ends.</p>
+        <ol class="how">
+          <li>Enter both player names and press <b>Start Game</b>.</li>
+          <li>The first two taps secretly hide the two poisons. Pass the device so each player hides one.</li>
+          <li>Take turns flipping cards: 🍭 scores a point, ☠️ ends the game.</li>
+          <li>Highest score wins once someone is poisoned or every card is flipped.</li>
+        </ol>
+        <div class="tags"><span>Kotlin</span><span>Jetpack Compose</span><span>Material 3</span><span>LazyVerticalGrid</span><span>State</span></div>
+        <div class="links"><a class="btn" href="../../assets/source/Poison-Game-source.zip" download>Download Kotlin source (.zip)</a></div>
+        <p class="note">The original is an Android app with two screens (player names, then the game). This web version keeps the same rules, scoring and Game Over dialog.</p>
+      </div>
+      <div class="demo">
+        <div class="phone"><div class="screen">
+          <div class="status"><span id="clock">9:41</span><span>▮▮▮ ◔</span></div>
+
+          <form class="app login" id="login" autocomplete="off">
+            <h2>Enter Player Names</h2>
+            <div class="field"><input id="p1" placeholder=" " maxlength="16" /><label for="p1">Player 1</label></div>
+            <div class="field"><input id="p2" placeholder=" " maxlength="16" /><label for="p2">Player 2</label></div>
+            <button class="m3btn" id="startBtn" type="submit" disabled>Start Game</button>
+          </form>
+
+          <div class="app" id="game" hidden>
+            <div class="score">
+              <div id="s1"></div><div id="s2"></div>
+              <div class="turn" id="turn"></div>
+            </div>
+            <div class="grid" id="grid"></div>
+            <div class="hint">Tip: look away while the other player hides their poison.</div>
+          </div>
+
+          <div class="scrim" id="over" hidden>
+            <div class="dialog" role="alertdialog" aria-labelledby="overTitle">
+              <h3 id="overTitle">Game Over</h3>
+              <p id="overText"></p>
+              <div class="end"><button class="m3btn" id="restart">Restart Game</button></div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    let state, names;
+
+    function newState() {
+      return {
+        grid: Array.from({ length: 16 }, (_, i) => ({ index: i, isPoison: false, isFlipped: false })),
+        player1: { name: names[0], score: 0, isAlive: true },
+        player2: { name: names[1], score: 0, isAlive: true },
+        turn: 1, poisonsChosen: 0, gameOver: false, justFlipped: -1,
+      };
+    }
+
+    // LoginScreen: Start is enabled only when both names are filled
+    const check = () => ($("startBtn").disabled = !($("p1").value.trim() && $("p2").value.trim()));
+    $("p1").addEventListener("input", check); $("p2").addEventListener("input", check);
+    $("login").addEventListener("submit", (e) => {
+      e.preventDefault();
+      names = [$("p1").value.trim() || "Player 1", $("p2").value.trim() || "Player 2"];
+      state = newState();
+      $("login").hidden = true; $("game").hidden = false;
+      render();
+    });
+
+    // handleCardClick from GameActivity.kt
+    function handleCardClick(card) {
+      if (state.gameOver || card.isFlipped || state.poisonsChosen < 2) return;
+      const current = state.turn === 1 ? state.player1 : state.player2;
+      if (!current.isAlive) return;
+      card.isFlipped = true; state.justFlipped = card.index;
+      if (card.isPoison) current.isAlive = false; else current.score++;
+      state.turn = state.turn === 1 ? 2 : 1;
+      state.gameOver = !state.player1.isAlive || !state.player2.isAlive || state.grid.every((c) => c.isFlipped);
+    }
+
+    function onCardClick(i) {
+      const card = state.grid[i];
+      if (state.poisonsChosen < 2 && !card.isPoison) {
+        card.isPoison = true; state.poisonsChosen++; state.justFlipped = -1;
+      } else {
+        handleCardClick(card);
+      }
+      render();
+    }
+
+    function render() {
+      const p = (pl) => `${esc(pl.name)}: ${pl.score} ${pl.isAlive ? "" : '<span class="dead">(DEAD)</span>'}`;
+      $("s1").innerHTML = p(state.player1); $("s2").innerHTML = p(state.player2);
+      $("turn").textContent = state.gameOver ? "" : state.poisonsChosen < 2
+        ? `Hide poison ${state.poisonsChosen + 1} of 2: ${state.poisonsChosen === 0 ? names[0] : names[1]}, tap a card secretly`
+        : `${state.turn === 1 ? names[0] : names[1]}'s turn`;
+      $("grid").innerHTML = state.grid.map((c) => {
+        const shown = state.gameOver || c.isFlipped;
+        const cls = shown ? (c.isPoison ? "poison" : "safe") : "";
+        return `<button class="card ${cls} ${c.index === state.justFlipped ? "flip" : ""}" data-i="${c.index}" aria-label="Card ${c.index + 1}">${shown ? (c.isPoison ? "☠️" : "🍭") : "❓"}</button>`;
+      }).join("");
+      if (state.gameOver) {
+        const a = state.player1, b = state.player2;
+        const winner = a.score > b.score ? a.name : b.score > a.score ? b.name : "Draw";
+        $("overText").textContent = winner === "Draw" ? "It's a Draw!" : `Winner: ${winner}`;
+        setTimeout(() => ($("over").hidden = false), 450);
+      }
+    }
+    $("grid").addEventListener("click", (e) => { const b = e.target.closest(".card"); if (b) onCardClick(+b.dataset.i); });
+    $("restart").addEventListener("click", () => { state = newState(); $("over").hidden = true; render(); });
+    const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    $("clock").textContent = new Date().toTimeString().slice(0, 5);
+  </script>
+</body>
+</html>

@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Duo-Able · Live Demo</title>
+  <meta name="description" content="Web version of Neil Rodas's Kotlin Jetpack Compose co-op puzzle game Duo-Able, where two players on two devices solve puzzles by talking to each other." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../demo.css" />
+  <style>
+    .layout { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+    .intro > * { min-width: 0; }
+    .intro { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 40px; align-items: start; }
+    .phones { display: flex; gap: 28px; justify-content: center; flex-wrap: wrap; }
+    .seg { display: none; margin: 0 auto 14px; padding: 4px; border: 1px solid var(--line); border-radius: 999px; width: max-content; }
+    .seg button { border: 0; background: transparent; color: var(--muted); padding: 6px 16px; border-radius: 999px; font: 500 14px "IBM Plex Sans", sans-serif; cursor: pointer; }
+    .seg button.on { background: var(--ink); color: var(--bg); }
+    .spoiler { margin-top: 18px; font-size: 14px; color: var(--muted); max-width: 540px; }
+    .spoiler summary { cursor: pointer; color: var(--accent); }
+
+    /* ---------- The app ---------- */
+    .app { position: absolute; inset: 0; background: #000; color: #fff; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; padding: 34px 20px 22px; text-align: center; user-select: none; -webkit-user-select: none; }
+    .app.white { background: #fff; color: #000; }
+    .app img { display: block; max-width: 100%; -webkit-user-drag: none; }
+    .tap { cursor: pointer; transition: transform .12s, filter .12s; }
+    .tap:hover { filter: brightness(1.12); }
+    .tap:active { transform: scale(.96); }
+    .menu { gap: 14px; justify-content: center; }
+    .menu .logo { width: 88%; margin-bottom: 18px; }
+    .menu .opt { width: 62%; }
+    .menu .muted { opacity: .55; cursor: default; }
+    .head { width: 88%; margin-top: 70px; }
+    .say { font-size: 21px; line-height: 1.35; margin: 26px 6px 0; }
+    .nav2 { margin-top: auto; display: flex; justify-content: space-between; width: 100%; gap: 14px; }
+    .nav2 img { width: 44%; }
+    .boxbtn { width: 44%; height: 60px; border: 2px solid #fff; border-radius: 8px; display: grid; place-items: center; font-size: 22px; background: none; color: #fff; cursor: pointer; }
+    .center-say { margin-top: auto; margin-bottom: auto; font-size: 22px; line-height: 1.35; }
+    .red { width: 52px; height: 52px; }
+    .redwrap { position: absolute; right: 26px; bottom: 120px; }
+    .key { width: 150px; position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); animation: pop .4s cubic-bezier(.3,1.6,.5,1); }
+    @keyframes pop { from { transform: translateX(-50%) scale(.3); opacity: 0; } }
+    .letter { position: absolute; left: 34px; right: 34px; top: 120px; text-align: left; font-size: 16px; line-height: 1.5; }
+
+    /* Sliders */
+    .sliders { width: 100%; margin: auto 0; display: grid; gap: 48px; padding: 0 6px; }
+    .slider { position: relative; height: 60px; touch-action: none; cursor: pointer; }
+    .slider .rail { position: absolute; left: 0; right: 0; top: 28px; height: 4px; background: #fff; }
+    .slider .tick { position: absolute; top: 15px; width: 2px; height: 30px; background: #fff; transform: translateX(-1px); }
+    .slider .knob { position: absolute; top: 15px; width: 30px; height: 30px; border-radius: 50%; background: #fff; transform: translateX(-15px); transition: left .15s; cursor: grab; }
+    .slider.drag .knob { transition: none; cursor: grabbing; }
+
+    /* Radio */
+    .story { font-size: 15.5px; line-height: 1.5; margin-top: 18px; }
+    .radio-box { position: relative; width: 150px; margin: 34px auto 0; }
+    .radio-box img { width: 150px; }
+    .note-pop { position: absolute; font-weight: 700; animation: fadeIn .25s; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } }
+    .radio-slider { width: 84%; margin-top: 50px; }
+
+    /* Piano */
+    .slots { display: flex; gap: 8px; margin-top: 46px; }
+    .slots span { width: 45px; height: 45px; background: #d3d3d3; display: grid; place-items: center; font-size: 18px; color: #000; }
+    .piano { position: relative; display: flex; margin-top: 46px; }
+    .wk { width: 40px; height: 150px; border: 1px solid #000; background: #fff; color: #000; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 14px; font-size: 16px; cursor: pointer; }
+    .wk:active, .wk.hit { background: #e8e8e8; }
+    .bk { position: absolute; top: 0; width: 25px; height: 80px; background: #000; cursor: pointer; }
+    .bk:active, .bk.hit { background: #444; }
+    .piano-msg { margin-top: 30px; font-size: 18px; }
+
+    /* Round 3 */
+    .r3 { padding-top: 40px; }
+    .names { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; }
+    .names button { height: 42px; border: 1px solid #fff; border-radius: 8px; background: #000; color: #fff; font-size: 13.5px; cursor: pointer; padding: 0 4px; }
+    .names button.on { background: #fff; color: #000; }
+    .dots { display: flex; gap: 8px; margin: 20px 0 12px; }
+    .dots i { display: block; width: 30px; height: 5px; border: 1px solid #fff; border-radius: 4px; }
+    .dots i.on { background: #fff; }
+    .tale { font-size: 13.5px; line-height: 1.5; text-align: left; flex: 1; overflow: auto; width: 100%; }
+    .tale .dim { color: #808080; }
+    .msgbox { flex: 1; display: grid; place-items: center; font-size: 17px; line-height: 1.45; padding: 0 12px; }
+    .culprit { font-weight: 700; font-size: 15px; margin-top: 8px; }
+    .bigred { width: 64px; height: 64px; border-radius: 50%; border: 2px solid #fff; background: #ff0000; margin-top: 12px; cursor: pointer; flex: none; }
+    .bigred:disabled { background: #808080; cursor: default; }
+
+    /* Dialog */
+    .scrim { position: absolute; inset: 0; background: rgba(0,0,0,.55); display: grid; place-items: center; padding: 22px; z-index: 6; }
+    .dlg { background: #fff; color: #000; border-radius: 22px; padding: 22px; width: 100%; text-align: left; font-size: 16px; }
+    .dlg .row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+    .dlg button { background: #000; color: #fff; border: 0; border-radius: 20px; padding: 9px 18px; font-size: 14px; cursor: pointer; }
+    .confirm { gap: 0; justify-content: space-around; }
+    .confirm .row { display: flex; gap: 22px; }
+    .confirm button { background: #d3d3d3; color: #000; border: 0; border-radius: 8px; padding: 10px 22px; font-size: 18px; cursor: pointer; }
+
+    /* End screens */
+    .victory img { width: 70%; margin-top: 40px; }
+    .victory .time { font-size: 22px; margin: 14px 0; }
+    .end-btns { display: grid; gap: 12px; justify-items: center; margin-top: 8px; }
+    .end-btns img { width: 170px; }
+    .thanks img.card { width: 86%; margin-top: 50px; border-radius: 10px; }
+
+    @media (max-width: 860px) {
+      .intro { grid-template-columns: minmax(0, 1fr); gap: 0; }
+      .seg { display: flex; }
+      .phones > div[data-hide="1"] { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="bar"><a href="../../index.html#work">← Back to portfolio</a><span class="mono">Live demo</span></div>
+    <div class="layout">
+      <div class="intro">
+        <div>
+          <span class="mono">Co-op mobile game · Kotlin + Jetpack Compose</span>
+          <h1>Duo-Able</h1>
+          <p class="lede">A two-player co-op puzzle game. Each player is on their own device and sees different clues, so the only way through is to talk. Three rounds: a slider lock, a radio-and-piano melody, and a story you have to piece together in order.</p>
+          <ul class="how">
+            <li>Choose <b>Player 1</b> on one phone and <b>Player 2</b> on the other.</li>
+            <li>Read your clues aloud; your partner can't see your screen.</li>
+            <li>Hit the red button when you think you've solved a round.</li>
+          </ul>
+          <div class="tags"><span>Kotlin</span><span>Jetpack Compose</span><span>Canvas</span><span>Drag gestures</span><span>Sealed classes</span></div>
+        </div>
+        <div>
+          <p class="note" style="margin-top:0">Try it with a friend: open this page on two devices, and each person picks a player. Playing alone? Both phones are right here.</p>
+          <details class="spoiler"><summary>Stuck? Show the answers</summary>
+            <p>Round 1: set Player 1's sliders to positions 3, 1, 3. Round 2: slide Player 1's radio to find the notes, then play D, G, A, F on Player 2's piano. Round 3: tap Terry, Dolly, Torry, Oliver, May, Josh, Ben.</p>
+          </details>
+          <div class="links" style="margin-top:18px"><a class="btn" href="../../assets/source/Duo-Able-source.zip" download>Download Kotlin source (.zip)</a></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="seg" role="tablist"><button class="on" data-show="0">Phone A</button><button data-show="1">Phone B</button></div>
+        <div class="phones">
+          <div><div class="phone"><div class="screen" id="phoneA"></div></div><div class="phone-label">Phone A</div></div>
+          <div data-hide="1"><div class="phone"><div class="screen" id="phoneB"></div></div><div class="phone-label">Phone B</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const IMG = (n) => `img/${n}.png`;
+
+    class DuoApp {
+      constructor(root) { this.root = root; this.go("MainMenu"); }
+
+      go(screen, arg) {
+        this.screen = screen; this.arg = arg;
+        this.root.innerHTML = "";
+        const el = document.createElement("div");
+        el.className = "app";
+        this.root.appendChild(el);
+        this[screen](el, arg);
+      }
+
+      // ---------- Menus & intro ----------
+      MainMenu(el) {
+        el.classList.add("menu");
+        el.innerHTML = `
+          <img class="logo" src="${IMG("logo")}" alt="Duo-Able">
+          <img class="opt tap" data-a="p1" src="${IMG("player1")}" alt="Player 1">
+          <img class="opt tap" data-a="p2" src="${IMG("player2")}" alt="Player 2">
+          <img class="opt muted" src="${IMG("achievement")}" alt="Achievement">
+          <img class="opt muted" src="${IMG("quitbttn")}" alt="Quit">`;
+        this.on(el, { p1: () => this.go("Info", { p: 1, step: 0 }), p2: () => this.go("Info", { p: 2, step: 0 }) });
+      }
+
+      Info(el, { p, step }) {
+        const texts = [
+          `Make sure your partner is in Player ${p === 1 ? 2 : 1}`,
+          "You can each play duo-able on your preferred platform. No connection is required between devices",
+          "You both need to communicate. If you are in the same room, try not to look at each others screen. If stuck, feel free to take a peek for hint.",
+        ];
+        el.innerHTML = `
+          <img class="head" src="${IMG(p === 1 ? "p1" : "p2")}" alt="Player ${p}">
+          <p class="say">${texts[step]}</p>
+          <div class="nav2"><img class="tap" data-a="back" src="${IMG("back")}" alt="Back"><img class="tap" data-a="next" src="${IMG("next")}" alt="Next"></div>`;
+        this.on(el, {
+          back: () => (step === 0 ? this.go("MainMenu") : this.go("Info", { p, step: step - 1 })),
+          next: () => (step < 2 ? this.go("Info", { p, step: step + 1 }) : this.go("Trust", { p })),
+        });
+      }
+
+      Trust(el, { p }) {
+        el.innerHTML = `<p class="center-say">Do you trust the person in Player ${p === 1 ? 2 : 1}?</p>
+          <div class="nav2"><button class="boxbtn" data-a="back">Back</button><button class="boxbtn" data-a="next">Next</button></div>`;
+        this.on(el, { back: () => this.go("Info", { p, step: 2 }), next: () => this.go("GameStart", { p }) });
+      }
+
+      GameStart(el, { p }) {
+        el.innerHTML = `<p class="center-say">Both of you must click the same button EXACTLY the same time to start</p>
+          <div class="nav2"><button class="boxbtn" data-a="back">Back</button><button class="boxbtn" data-a="start">Start</button></div>`;
+        this.on(el, { back: () => this.go("Trust", { p }), start: () => { this.startTime = Date.now(); this.go("Slider", { p }); } });
+      }
+
+      // ---------- Round 1 ----------
+      Slider(el, { p }) {
+        if (p === 1) {
+          el.innerHTML = `<div class="sliders"></div>`;
+          const idx = [0, 0, 0];
+          const box = el.querySelector(".sliders");
+          idx.forEach((_, i) => box.appendChild(this.makeSlider(7, 0, (v) => (idx[i] = v), true)));
+          this.redButton(el, () => {
+            const ok = idx[0] === 2 && idx[1] === 0 && idx[2] === 2; // correctCombo = listOf(2,0,2)
+            const old = el.querySelector(".key"); if (old) old.remove();
+            if (ok) {
+              const k = this.img("key", "key tap"); k.alt = "Golden key";
+              k.onclick = () => this.go("Radio"); el.appendChild(k);
+            }
+          });
+        } else {
+          el.innerHTML = `<p class="letter">Dear Marga,<br><br>I have seen 3 dalmatians yesterday and Marites saw me but she didn't talk to me. An hour later I spoke to Mr. Shoeman to gossip about Marites well, he didn't say anything because he was too busy shining 3 clients' shoes.</p>`;
+          this.redButton(el, () => this.go("Confirm", { p: 2 }));
+        }
+      }
+
+      Confirm(el, { p }) {
+        el.classList.add("confirm");
+        el.innerHTML = `<p style="font-size:22px">Are you sure Player 1 got the golden key?</p>
+          <div class="row"><button data-a="back">Back</button><button data-a="next">Next</button></div>
+          <img class="red" src="${IMG("redbutton")}" alt="">`;
+        this.on(el, {
+          back: () => (p === 2 ? this.go("Slider", { p: 2 }) : this.go("Radio")),
+          next: () => (p === 2 ? this.go("Piano") : this.go("Round3", { p: 1 })),
+        });
+      }
+
+      // ---------- Round 2 ----------
+      Radio(el) {
+        el.innerHTML = `<p class="story">Margarett and I still would love to roam around the park, have a picnic, and enjoy the summer shimmering. The thing is, I couldn't find a way to give her a ring. There has to do something.</p>
+          <div class="radio-box"><img src="${IMG("radio")}" alt="Radio"></div>`;
+        const letters = { 5: ["A", -80, -120, 30], 6: ["F", 50, -120, 28], 1: ["D", 100, -140, 32], 3: ["G", -30, -140, 26] };
+        const box = el.querySelector(".radio-box");
+        const s = this.makeSlider(8, 0, (v) => {
+          box.querySelectorAll(".note-pop").forEach((n) => n.remove());
+          const L = letters[v];
+          if (L) {
+            const n = document.createElement("span");
+            n.className = "note-pop"; n.textContent = L[0]; n.style.fontSize = L[3] * 0.85 + "px";
+            n.style.left = 75 + L[1] * 0.6 + "px"; n.style.top = 100 + L[2] * 0.55 + "px";
+            box.appendChild(n);
+          }
+        }, false);
+        s.classList.add("radio-slider");
+        el.appendChild(s);
+        this.redButton(el, () => this.go("Confirm", { p: 1 }), 100);
+      }
+
+      Piano(el) {
+        el.classList.add("white");
+        el.innerHTML = `<div class="slots"><span></span><span></span><span></span><span></span></div>
+          <div class="piano">${["A", "B", "C", "D", "E", "F", "G"].map((n) => `<div class="wk" data-n="${n}">${n}</div>`).join("")}
+            <div class="bk" data-n="A#" style="left:27.5px"></div><div class="bk" data-n="C#" style="left:107.5px"></div><div class="bk" data-n="F#" style="left:227.5px"></div></div>
+          <p class="piano-msg">Guess the notes.</p>`;
+        const notes = [];
+        const slots = [...el.querySelectorAll(".slots span")];
+        const show = () => slots.forEach((s, i) => (s.textContent = notes[i] || ""));
+        el.querySelectorAll("[data-n]").forEach((k) => k.addEventListener("pointerdown", () => {
+          if (notes.length >= 4) notes.shift();
+          notes.push(k.dataset.n); show(); tone(k.dataset.n);
+          k.classList.add("hit"); setTimeout(() => k.classList.remove("hit"), 140);
+        }));
+        this.redButton(el, () => {
+          if (notes.join() === "D,G,A,F") {
+            el.querySelector(".piano-msg").textContent = "Nice! You got it correct.";
+            if (!el.querySelector(".key")) { const k = this.img("key", "key tap"); k.alt = "Golden key"; k.onclick = () => this.go("Round3", { p: 2 }); el.appendChild(k); }
+          } else { notes.length = 0; show(); }
+        }, 100);
+      }
+
+      // ---------- Round 3 ----------
+      Round3(el, { p }) { p === 1 ? this.round3P1(el) : this.round3P2(el); }
+
+      round3P2(el) {
+        el.classList.add("r3");
+        const map = {
+          Her: "That french guy telling that her wife only knows it but her sister April, knows where his wife is.",
+          Him: "Rem knows a little about the rumor.", He: "May is not a witch.", They: "Liza is Josh's Brother.",
+          Everyone: "Terry right before his death, saw his two bestfriend. Torry and Oliver.",
+          Everybody: "Josh knows anything and anyone may tell lies.", Anyone: "Ben is the real culprit.",
+          Someone: "That someone is a witch, Dolly.", Anybody: "Ben is not the culprit",
+          She: "The witch isn't really scary", Somebody: "Rem is the leader of the bandits.",
+        };
+        const labels = ["Him", "Her", "They", "Everybody", "He", "Everyone", "Anybody", "Someone", "She", "Somebody", "Anyone"];
+        el.innerHTML = `<div class="names">${labels.map((l) => `<button data-l="${l}">${l}</button>`).join("")}</div>
+          <div class="msgbox">..........</div><button class="bigred" aria-label="Red button"></button>`;
+        el.querySelector(".names").addEventListener("click", (e) => {
+          const b = e.target.closest("button"); if (!b) return;
+          el.querySelectorAll(".names button").forEach((x) => x.classList.toggle("on", x === b));
+          el.querySelector(".msgbox").textContent = map[b.dataset.l];
+        });
+        el.querySelector(".bigred").onclick = () => {
+          const s = document.createElement("div"); s.className = "scrim";
+          s.innerHTML = `<div class="dlg">Are you sure Player 1 got the <b>Golden Key</b>?<div class="row"><button data-x="c">Cancel</button><button data-x="n">Next</button></div></div>`;
+          s.onclick = (e) => { const x = e.target.dataset.x; if (x === "n") this.finish(); else if (x === "c" || e.target === s) s.remove(); };
+          el.appendChild(s);
+        };
+      }
+
+      round3P1(el) {
+        el.classList.add("r3");
+        const order = ["Terry", "Dolly", "Torry", "Oliver", "May", "Josh", "Ben"];
+        const labels = ["Terry", "Jude", "May", "Liza", "Ben", "Torry", "Josh", "Theo", "Oliver", "Rem", "Dolly"];
+        const story = [
+          "Terry is at someone’s house.",
+          "No one knows if that house is abandoned or not. So his friend told Terry to go inspect it, it wouldn’t be trespassing either if the house is considered abandoned right? Oh dear boy, poor Terry. He was surprised by those bandits. It was a trap! He was mugged and took his life.",
+          "According to the investigation, the bandits only took advantage of the abandoned house. One of them was caught and doesn’t say nothing but hers.",
+          "",
+          "Everybody on the village have rumors that anyone who tries to visit the abandoned house, worse will happen. The investigation is still ongoing.",
+        ];
+        const triggers = ["Terry", "Terry", "Dolly", "Torry", "Oliver", "May", "Josh"];
+        const clicked = []; let progress = 0, culprit = false, culpritMsg = "";
+        el.innerHTML = `<div class="names">${labels.map((l) => `<button data-l="${l}">${l}</button>`).join("")}</div>
+          <div class="dots">${"<i></i>".repeat(7)}</div><div class="tale"></div><div class="culprit"></div>
+          <button class="bigred" disabled aria-label="Red button"></button>`;
+        const render = () => {
+          el.querySelectorAll(".names button").forEach((b) => b.classList.toggle("on", clicked.includes(b.dataset.l)));
+          el.querySelectorAll(".dots i").forEach((d, i) => d.classList.toggle("on", i < progress));
+          el.querySelector(".tale").innerHTML = story.map((s, i) => {
+            const vis = i === 0 || clicked.includes(triggers[i]);
+            return `<span class="${vis ? "" : "dim"}">${s}</span>`;
+          }).join(" ");
+          el.querySelector(".culprit").innerHTML = culprit ? `Who is the real culprit?${culpritMsg ? `<br>${culpritMsg}` : ""}` : "";
+          el.querySelector(".bigred").disabled = progress !== 7;
+        };
+        el.querySelector(".names").addEventListener("click", (e) => {
+          const b = e.target.closest("button"); if (!b) return;
+          const label = b.dataset.l;
+          if (label === order[progress]) {
+            if (!clicked.includes(label)) { clicked.push(label); progress++; if (label === "Josh") culprit = true; }
+          } else if (culprit && label === "Ben") culpritMsg = "Nice catch!";
+          render();
+        });
+        el.querySelector(".bigred").onclick = () => { if (progress === 7) this.finish(); };
+        render();
+      }
+
+      // ---------- End ----------
+      finish() {
+        const ms = Date.now() - (this.startTime || Date.now());
+        const p2 = (n) => String(n).padStart(2, "0");
+        this.time = `${p2(Math.floor(ms / 3600000))}:${p2(Math.floor(ms / 60000) % 60)}:${p2(Math.floor(ms / 1000) % 60)}`;
+        this.go("Victory");
+      }
+
+      Victory(el) {
+        el.classList.add("victory");
+        el.innerHTML = `<img src="${IMG("victory")}" alt="Victory! Double the effort, double the win! Amazing teamwork, Duo!">
+          <p class="time">Time: ${this.time}</p>
+          <div class="end-btns"><img class="tap" data-a="next" src="${IMG("next2")}" alt="Next"><img src="${IMG("recordtime")}" alt="Record time" style="opacity:.6"></div>`;
+        this.on(el, { next: () => this.go("Thanks") });
+      }
+
+      Thanks(el) {
+        el.classList.add("thanks");
+        el.innerHTML = `<img class="card" src="${IMG("thanks")}" alt="Thank you for playing the beta version of the game!">
+          <div class="end-btns" style="margin-top:22px"><img src="${IMG("suggest")}" alt="Suggest" style="opacity:.6"><img class="tap" data-a="again" src="${IMG("playagain")}" alt="Play Again"></div>`;
+        this.on(el, { again: () => this.go("MainMenu") });
+      }
+
+      // ---------- Helpers ----------
+      img(name, cls) { const i = document.createElement("img"); i.src = IMG(name); i.className = cls; return i; }
+      on(el, actions) { el.querySelectorAll("[data-a]").forEach((n) => n.addEventListener("click", () => actions[n.dataset.a] && actions[n.dataset.a]())); }
+      redButton(el, fn, bottom = 120) {
+        const w = document.createElement("div"); w.className = "redwrap"; w.style.bottom = bottom + "px";
+        w.innerHTML = `<img class="red tap" src="${IMG("redbutton")}" alt="Red button">`;
+        w.firstChild.onclick = fn; el.appendChild(w);
+      }
+
+      // Tick slider: 7 lines (round 1, snaps on release) or 8 lines (radio, updates while dragging)
+      makeSlider(lines, start, onChange, snapOnRelease) {
+        const s = document.createElement("div"); s.className = "slider";
+        s.innerHTML = `<div class="rail"></div>${Array.from({ length: lines }, (_, i) => `<div class="tick" style="left:${(i / (lines - 1)) * 100}%"></div>`).join("")}<div class="knob"></div>`;
+        const knob = s.querySelector(".knob");
+        let index = start;
+        const place = (frac) => (knob.style.left = frac * 100 + "%");
+        const set = (i) => { index = i; place(i / (lines - 1)); onChange(i); };
+        const fracAt = (e) => { const r = s.getBoundingClientRect(); return Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)); };
+        s.addEventListener("pointerdown", (e) => {
+          s.setPointerCapture(e.pointerId); s.classList.add("drag");
+          const f = fracAt(e); place(f); if (!snapOnRelease) set(Math.round(f * (lines - 1)));
+        });
+        s.addEventListener("pointermove", (e) => {
+          if (!s.hasPointerCapture(e.pointerId)) return;
+          const f = fracAt(e); place(f);
+          if (!snapOnRelease) { const i = Math.round(f * (lines - 1)); if (i !== index) { index = i; onChange(i); } }
+        });
+        s.addEventListener("pointerup", (e) => { s.classList.remove("drag"); set(Math.round(fracAt(e) * (lines - 1))); });
+        set(start);
+        return s;
+      }
+    }
+
+    // Small piano tone so the keys feel alive
+    let ctx;
+    const FREQ = { A: 220, "A#": 233.08, B: 246.94, C: 261.63, "C#": 277.18, D: 293.66, E: 329.63, F: 349.23, "F#": 369.99, G: 392 };
+    function tone(n) {
+      try {
+        ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+        const o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime;
+        o.type = "triangle"; o.frequency.value = FREQ[n] * 2;
+        g.gain.setValueAtTime(0.25, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.9);
+        o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + 0.95);
+      } catch { /* audio unavailable */ }
+    }
+
+    new DuoApp(document.getElementById("phoneA"));
+    new DuoApp(document.getElementById("phoneB"));
+
+    // Phone switcher on small screens
+    const phones = document.querySelectorAll(".phones > div");
+    document.querySelectorAll(".seg button").forEach((b) => b.addEventListener("click", () => {
+      document.querySelectorAll(".seg button").forEach((x) => x.classList.toggle("on", x === b));
+      phones.forEach((p, i) => (p.dataset.hide = i === +b.dataset.show ? "0" : "1"));
+    }));
+  </script>
+</body>
+</html>

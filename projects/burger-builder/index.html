@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Burger Builder · Live Demo</title>
+  <meta name="description" content="Web version of Neil Rodas's Kotlin Android burger builder (IT140P OBE): tap ingredients to stack a burger and watch the price update." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../demo.css" />
+  <style>
+    .app { position: absolute; inset: 0; background: #a68352; display: flex; flex-direction: column; font-family: Roboto, system-ui, sans-serif; padding-top: 30px; }
+    .top { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; }
+    .price { font-size: 36px; font-weight: 700; color: #004d00; font-variant-numeric: tabular-nums; }
+    .price.bump { animation: bump .3s ease; }
+    @keyframes bump { 50% { transform: scale(1.12); } }
+    .abtn { border: 0; border-radius: 20px; padding: 10px 20px; color: #fff; font: 500 14px Roboto, sans-serif; letter-spacing: .06em; cursor: pointer; box-shadow: 0 2px 3px rgba(0,0,0,.25); }
+    .abtn:active { transform: translateY(1px); }
+    .reset { background: #8b0000; }
+    .stage { flex: 1; overflow-y: auto; padding: 18px 0 24px; display: flex; flex-direction: column; align-items: center; }
+    .stack { display: flex; flex-direction: column; align-items: center; margin: auto 0; }
+    .stack img { display: block; width: 220px; height: auto; pointer-events: none; }
+    .stack .bun-top { width: 230px; position: relative; z-index: 100; }
+    .stack .layer { position: relative; margin-top: -34px; width: 200px; animation: drop .35s cubic-bezier(.3,1.4,.5,1); }
+    .stack .layer.patty { width: 190px; }
+    .stack .layer.onion { width: 170px; }
+    .stack .bun-bottom { width: 226px; margin-top: -30px; position: relative; z-index: 0; }
+    @keyframes drop { from { transform: translateY(-80px); opacity: 0; } }
+    .tray { background: #efefef; height: 130px; display: flex; gap: 10px; padding: 12px; overflow-x: auto; }
+    .card { flex: none; width: 112px; border: 0; border-radius: 10px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,.18); display: grid; grid-template-rows: 1fr auto; place-items: center; padding: 8px; cursor: pointer; transition: transform .12s; }
+    .card:hover { transform: translateY(-2px); }
+    .card:active { transform: scale(.96); }
+    .card img { max-width: 92px; max-height: 64px; }
+    .card span { font-size: 12px; color: #555; }
+    .order { margin: 10px 12px 12px; height: 52px; border-radius: 26px; background: #1b5e20; font-size: 16px; }
+    .toast { position: absolute; left: 50%; bottom: 140px; transform: translateX(-50%); background: rgba(50,50,50,.92); color: #fff; padding: 9px 16px; border-radius: 18px; font: 14px Roboto, sans-serif; white-space: nowrap; animation: toast 2s ease forwards; z-index: 5; }
+    @keyframes toast { 0% { opacity: 0; } 10%, 85% { opacity: 1; } 100% { opacity: 0; } }
+    .count { font-size: 12.5px; color: #3d2d14; text-align: center; min-height: 18px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="bar"><a href="../../index.html#work">← Back to portfolio</a><span class="mono">Live demo</span></div>
+    <div class="layout">
+      <div>
+        <span class="mono">Mobile app · Kotlin + Android Views (IT140P OBE)</span>
+        <h1>Burger Builder</h1>
+        <p class="lede">An Android app for building a burger. Tap an ingredient in the tray to slide it between the buns; the price updates as you go. It was written to show object-oriented programming in Kotlin.</p>
+        <ul class="how">
+          <li>A base burger costs <b>$250</b>.</li>
+          <li>Cheese adds $20, a patty $50 and onion $15. New layers stack right under the top bun.</li>
+          <li><b>Reset</b> clears the layers and the price.</li>
+        </ul>
+        <div class="tags"><span>Kotlin</span><span>OOP</span><span>Abstract class</span><span>Interface</span><span>RecyclerView</span></div>
+        <div class="links"><a class="btn" href="../../assets/source/Burger-Builder-source.zip" download>Download Kotlin source (.zip)</a></div>
+        <p class="note">The original models ingredients with a <code>Priceable</code> interface, an abstract <code>BurgerComponent</code> class and an <code>Ingredient</code> subclass, and shows them in a horizontal <code>RecyclerView</code>. The "Let me order!" button has no action yet in the original app.</p>
+      </div>
+      <div class="demo">
+        <div class="phone"><div class="screen">
+          <div class="status"><span id="clock">9:41</span><span>▮▮▮ ◔</span></div>
+          <div class="app">
+            <div class="top"><span class="price" id="price">$250</span><button class="abtn reset" id="reset">RESET</button></div>
+            <div class="stage" id="stage">
+              <div class="stack" id="stack">
+                <img class="bun-top" src="img/bun_top.png" alt="Top bun">
+                <img class="bun-bottom" src="img/bun_bottom.png" alt="Bottom bun">
+              </div>
+            </div>
+            <div class="count" id="count"></div>
+            <div class="tray" id="tray"></div>
+            <button class="abtn order" id="order">LET ME ORDER!</button>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Mirrors the Kotlin model: Priceable interface → BurgerComponent (abstract) → Ingredient
+    class BurgerComponent { constructor(name, image) { this.name = name; this.image = image; } getPrice() { throw new Error("abstract"); } }
+    class Ingredient extends BurgerComponent { #price; constructor(name, image, price) { super(name, image); this.#price = price; } getPrice() { return this.#price; } }
+
+    const ingredients = [new Ingredient("Cheese", "cheese", 20), new Ingredient("Patty", "patty", 50), new Ingredient("Onion", "onion", 15)];
+    const BASE = 250;
+    let totalPrice = BASE, layers = 0;
+    const $ = (id) => document.getElementById(id);
+
+    $("tray").innerHTML = ingredients.map((it, i) => `<button class="card" data-i="${i}"><img src="img/${it.image}.png" alt=""><span>${it.name} · $${it.getPrice()}</span></button>`).join("");
+
+    function updatePrice() {
+      $("price").textContent = `$${totalPrice}`;
+      $("price").classList.remove("bump"); void $("price").offsetWidth; $("price").classList.add("bump");
+      $("count").textContent = layers ? `${layers} layer${layers === 1 ? "" : "s"}` : "";
+    }
+
+    // addIngredientToBurger: always inserts between the buns at index 1
+    $("tray").addEventListener("click", (e) => {
+      const c = e.target.closest(".card"); if (!c) return;
+      const item = ingredients[+c.dataset.i];
+      const layer = document.createElement("img");
+      layer.src = `img/${item.image}.png`; layer.alt = item.name;
+      layer.className = `layer ${item.image}`;
+      layer.style.zIndex = 1 + layers;
+      $("stack").insertBefore(layer, $("stack").children[1]);
+      totalPrice += item.getPrice(); layers++;
+      updatePrice();
+      $("stage").scrollTop = 0;
+    });
+
+    function toast(msg) {
+      const t = document.createElement("div"); t.className = "toast"; t.textContent = msg;
+      document.querySelector(".app").appendChild(t); setTimeout(() => t.remove(), 2000);
+    }
+
+    // resetBurger: keep the two buns, remove everything in between
+    $("reset").addEventListener("click", () => {
+      totalPrice = BASE; layers = 0;
+      $("stack").querySelectorAll(".layer").forEach((l) => l.remove());
+      updatePrice(); toast("Burger Reset!");
+    });
+
+    $("clock").textContent = new Date().toTimeString().slice(0, 5);
+  </script>
+</body>
+</html>
